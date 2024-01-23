@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<!-- Created with https://packager.turbowarp.org/ -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- We only include this to explicitly loosen the CSP of various packager environments. It does not provide any security. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:">
+  <title>Archer</title>
+  <style>
+    body {
+      color: #ffffff;
+      font-family: sans-serif;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    :root, body.is-fullscreen {
+      background-color: #000000;
+    }
+    [hidden] {
+      display: none !important;
+    }
+    h1 {
+      font-weight: normal;
+    }
+    a {
+      color: inherit;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    #app, #loading, #error, #launch {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      cursor: default;
+      user-select: none;
+      -webkit-user-select: none;
+      background-color: #000000;
+    }
+    #launch {
+      background-color: rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+    }
+    .green-flag {
+      width: 80px;
+      height: 80px;
+      padding: 16px;
+      border-radius: 100%;
+      background: rgba(255, 255, 255, 0.75);
+      border: 3px solid hsla(0, 100%, 100%, 1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    #loading {
+      
+    }
+    .progress-bar-outer {
+      border: 1px solid currentColor;
+      height: 10px;
+      width: 200px;
+      max-width: 200px;
+    }
+    .progress-bar-inner {
+      height: 100%;
+      width: 0;
+      background-color: currentColor;
+    }
+    .loading-text, noscript {
+      font-weight: normal;
+      font-size: 36px;
+      margin: 0 0 16px;
+    }
+    .loading-image {
+      margin: 0 0 16px;
+    }
+    #error-message, #error-stack {
+      font-family: monospace;
+      max-width: 600px;
+      white-space: pre-wrap;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    #error-stack {
+      text-align: left;
+      max-height: 200px;
+      overflow: auto;
+    }
+    .control-button {
+      width: 2rem;
+      height: 2rem;
+      padding: 0.375rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
+      border: 0;
+      border-radius: 4px;
+    }
+    .control-button:hover {
+      background: #ff4c4c26;
+    }
+    .control-button.active {
+      background: #ff4c4c59;
+    }
+    .fullscreen-button {
+      background: white !important;
+    }
+    .standalone-fullscreen-button {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 0 0 0 4px;
+      padding: 4px;
+      cursor: pointer;
+    }
+    .sc-canvas {
+      cursor: auto;
+    }
+    .sc-monitor-root[data-opcode^="data_"] .sc-monitor-value-color {
+      background-color: #ff8c1a;
+    }
+    .sc-monitor-row-value-outer {
+      background-color: #fc662c;
+    }
+    .sc-monitor-row-value-editing .sc-monitor-row-value-outer {
+      background-color: #e25b27;
+    }
+    
+  </style>
+  <meta name="theme-color" content="#000000">
+  
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="launch" class="screen" hidden title="Click to start">
+    <div class="green-flag">
+      <svg viewBox="0 0 16.63 17.5" width="42" height="44">
+        <defs><style>.cls-1,.cls-2{fill:#4cbf56;stroke:#45993d;stroke-linecap:round;stroke-linejoin:round;}.cls-2{stroke-width:1.5px;}</style></defs>
+        <path class="cls-1" d="M.75,2A6.44,6.44,0,0,1,8.44,2h0a6.44,6.44,0,0,0,7.69,0V12.4a6.44,6.44,0,0,1-7.69,0h0a6.44,6.44,0,0,0-7.69,0"/>
+        <line class="cls-2" x1="0.75" y1="16.75" x2="0.75" y2="0.75"/>
+      </svg>
+    </div>
+  </div>
+
+  <div id="loading" class="screen">
+    <noscript>Enable JavaScript</noscript>
+    
+    <div class="loading-image"><img src="data:image/png;base64,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"></div>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="loading-inner"></div></div>
+  </div>
+
+  <div id="error" class="screen" hidden>
+    <h1>Error</h1>
+    <details>
+      <summary id="error-message"></summary>
+      <p id="error-stack"></p>
+    </details>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const appElement = document.getElementById('app');
+    const launchScreen = document.getElementById('launch');
+    const loadingScreen = document.getElementById('loading');
+    const loadingInner = document.getElementById('loading-inner');
+    const errorScreen = document.getElementById('error');
+    const errorScreenMessage = document.getElementById('error-message');
+    const errorScreenStack = document.getElementById('error-stack');
+
+    const handleError = (error) => {
+      console.error(error);
+      if (!errorScreen.hidden) return;
+      errorScreen.hidden = false;
+      errorScreenMessage.textContent = '' + error;
+      let debug = error && error.stack || 'no stack';
+      debug += '\nUser agent: ' + navigator.userAgent;
+      errorScreenStack.textContent = debug;
+    };
+    const setProgress = (progress) => {
+      if (loadingInner) loadingInner.style.width = progress * 100 + '%';
+    };
+    const interpolate = (a, b, t) => a + t * (b - a);
+
+    try {
+      setProgress(0.1);
+
+      const scaffolding = new Scaffolding.Scaffolding();
+      scaffolding.width = 480;
+      scaffolding.height = 360;
+      scaffolding.resizeMode = "preserve-ratio";
+      scaffolding.editableLists = false;
+      scaffolding.usePackagedRuntime = true;
+      scaffolding.setup();
+      scaffolding.appendTo(appElement);
+
+      const vm = scaffolding.vm;
+      window.scaffolding = scaffolding;
+      window.vm = scaffolding.vm;
+      window.Scratch = {
+        vm,
+        renderer: vm.renderer,
+        audioEngine: vm.runtime.audioEngine,
+        bitmapAdapter: vm.runtime.v2BitmapAdapter,
+        videoProvider: vm.runtime.ioDevices.video.provider
+      };
+
+      scaffolding.setUsername("player####".replace(/#/g, () => Math.floor(Math.random() * 10)));
+      scaffolding.setAccentColor("#ff4c4c");
+
+      scaffolding.addCloudProvider(new Scaffolding.Cloud.WebSocketProvider(["wss://clouddata.turbowarp.org","wss://clouddata.turbowarp.xyz"], "p4-@Стрельба из лука6а.sb3"));
+
+      if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
+        let isFullScreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        const fullscreenButton = document.createElement('img');
+        fullscreenButton.draggable = false;
+        fullscreenButton.className = 'control-button fullscreen-button';
+        fullscreenButton.addEventListener('click', () => {
+          if (isFullScreen) {
+            if (document.exitFullscreen) {
+              document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+              document.webkitExitFullscreen();
+            }
+          } else {
+            if (document.body.requestFullscreen) {
+              document.body.requestFullscreen();
+            } else if (document.body.webkitRequestFullscreen) {
+              document.body.webkitRequestFullscreen();
+            }
+          }
+        });
+        const otherControlsExist = false;
+        const fillColor = otherControlsExist ? '#575E75' : '#ffffff';
+        const updateFullScreen = () => {
+          isFullScreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+          document.body.classList.toggle('is-fullscreen', isFullScreen);
+          if (isFullScreen) {
+            fullscreenButton.src = 'data:image/svg+xml,' + encodeURIComponent('<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><g fill="' + fillColor + '" fill-rule="evenodd"><path d="M12.662 3.65l.89.891 3.133-2.374a.815.815 0 011.15.165.819.819 0 010 .986L15.467 6.46l.867.871c.25.25.072.664-.269.664L12.388 8A.397.397 0 0112 7.611V3.92c0-.341.418-.514.662-.27M7.338 16.35l-.89-.89-3.133 2.374a.817.817 0 01-1.15-.166.819.819 0 010-.985l2.37-3.143-.87-.871a.387.387 0 01.27-.664L7.612 12a.397.397 0 01.388.389v3.692a.387.387 0 01-.662.27M7.338 3.65l-.89.891-3.133-2.374a.815.815 0 00-1.15.165.819.819 0 000 .986l2.37 3.142-.87.871a.387.387 0 00.27.664L7.612 8A.397.397 0 008 7.611V3.92a.387.387 0 00-.662-.27M12.662 16.35l.89-.89 3.133 2.374a.817.817 0 001.15-.166.819.819 0 000-.985l-2.368-3.143.867-.871a.387.387 0 00-.269-.664L12.388 12a.397.397 0 00-.388.389v3.692c0 .342.418.514.662.27"/></g></svg>');
+          } else {
+            fullscreenButton.src = 'data:image/svg+xml,' + encodeURIComponent('<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><g fill="' + fillColor + '" fill-rule="evenodd"><path d="M16.338 7.35l-.89-.891-3.133 2.374a.815.815 0 01-1.15-.165.819.819 0 010-.986l2.368-3.142-.867-.871a.387.387 0 01.269-.664L16.612 3a.397.397 0 01.388.389V7.08a.387.387 0 01-.662.27M3.662 12.65l.89.89 3.133-2.374a.817.817 0 011.15.166.819.819 0 010 .985l-2.37 3.143.87.871c.248.25.071.664-.27.664L3.388 17A.397.397 0 013 16.611V12.92c0-.342.418-.514.662-.27M3.662 7.35l.89-.891 3.133 2.374a.815.815 0 001.15-.165.819.819 0 000-.986L6.465 4.54l.87-.871a.387.387 0 00-.27-.664L3.388 3A.397.397 0 003 3.389V7.08c0 .341.418.514.662.27M16.338 12.65l-.89.89-3.133-2.374a.817.817 0 00-1.15.166.819.819 0 000 .985l2.368 3.143-.867.871a.387.387 0 00.269.664l3.677.005a.397.397 0 00.388-.389V12.92a.387.387 0 00-.662-.27"/></g></svg>');
+          }
+        };
+        updateFullScreen();
+        document.addEventListener('fullscreenchange', updateFullScreen);
+        document.addEventListener('webkitfullscreenchange', updateFullScreen);
+        if (otherControlsExist) {
+          fullscreenButton.className = 'control-button fullscreen-button';
+          scaffolding.addControlButton({
+            element: fullscreenButton,
+            where: 'top-right'
+          });
+        } else {
+          fullscreenButton.className = 'standalone-fullscreen-button';
+          document.body.appendChild(fullscreenButton);
+        }
+      }
+
+      vm.setTurboMode(false);
+      if (vm.setInterpolation) vm.setInterpolation(false);
+      if (vm.setFramerate) vm.setFramerate(30);
+      if (vm.renderer.setUseHighQualityRender) vm.renderer.setUseHighQualityRender(false);
+      if (vm.setRuntimeOptions) vm.setRuntimeOptions({
+        fencing: true,
+        miscLimits: true,
+        maxClones: 300,
+      });
+      if (vm.setCompilerOptions) vm.setCompilerOptions({
+        enabled: true,
+        warpTimer: false
+      });
+      if (vm.renderer.setMaxTextureDimension) vm.renderer.setMaxTextureDimension(2048);
+
+      if (typeof ScaffoldingAddons !== 'undefined') {
+        ScaffoldingAddons.run(scaffolding, {"gamepad":false,"pointerlock":false,"specialCloudBehaviors":false,"unsafeCloudBehaviors":false,"pause":false});
+      }
+
+      scaffolding.setExtensionSecurityManager({
+        getSandboxMode: () => 'unsandboxed',
+        canLoadExtensionFromProject: () => true
+      });
+      for (const extension of ["data:text/javascript;,(function(Scratch)%20%7B%20%2F%2F%20Name%3A%20Runtime%20Options%0D%0A%2F%2F%20ID%3A%20runtimeoptions%0D%0A%2F%2F%20Description%3A%20Get%20and%20modify%20turbo%20mode%2C%20framerate%2C%20interpolation%2C%20clone%20limit%2C%20stage%20size%2C%20and%20more.%0D%0A%0D%0A(function%20(Scratch)%20%7B%0D%0A%20%20%22use%20strict%22%3B%0D%0A%0D%0A%20%20if%20(!Scratch.extensions.unsandboxed)%20%7B%0D%0A%20%20%20%20throw%20new%20Error(%22Runtime%20Options%20extension%20needs%20to%20be%20run%20unsandboxed%22)%3B%0D%0A%20%20%7D%0D%0A%0D%0A%20%20const%20greenFlagURI%20%3D%0D%0A%20%20%20%20%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAMAAADXqc3KAAABFFBMVEUAAACAgABVqlVJkklAn0BNmTNLljxGlzpDmzdFmjpGmzxHmz9Fmj1FmT5Emj1GmT1GmD1EmDxGmTxEmT1GmjxGmT1FmDxEmT5EmTxGmT5FmD1GmT5FmT1Gmj1EmT5FmT1FmT1FmDxGmT1FmjxLs09LtE9Jr0xJsk1Js05JtVBKtU5KtVBKtlBJrkpJsE1KtlFIrEpIsExLt1FLuFJKuVNIqkhLulNIp0VJqkhKtlJLvVRMvFNFmT5GpUVFmT1HpEVHokNMvlVFmT1Ho0NFmTxLvlVGoUFMvlVLvlVGn0BFmT1Nv1ZEmz5FmTxFmTxFmT1NvlZFmz9FmT5FnT9FnD5GnT9Mv1ZMv1ZMv1ZFmT1Mv1b%2F%2F%2F%2F70P2GAAAAWXRSTlMAAgMHCAoRFhcwMz0%2FRkdQVGFmaWpxcnh7gIGEhZKZo6eprLq%2Fv8DAwMDAwMDBwcHCwsPDxcbIysrLzM3Pz9DQ1NTV1dfZ29vg4uXm5%2Bjp6ens7fDx9Pv8%2FnPb5aAAAAABYktHRFt0vJU0AAAAsUlEQVQoz2NgwA3YhNiwS4hHykoou9goCrKiSUhGhqhZe7gbm3rxQwQ4BJihEupRYODooMDFyMAu6uMsgyoRFW5kHxjkqeuhL4cmAQM4JXRwSWjjktDEJaGFS0IVIeFtZuIaAZdQgUmY2%2FoqyTu5WcEkNGAS%2FkJMQJrbySAAJBxmGSoIlYAoYGCR8rPVM7QItuNlQJVgYGDlE5MU5kSErhz2%2BKCihEikNHYJJh5mBhIAADBcR%2Fr5OJzCAAAAAElFTkSuQmCC%22%3B%0D%0A%20%20const%20TURBO_MODE%20%3D%20%22turbo%20mode%22%3B%0D%0A%20%20const%20INTERPOLATION%20%3D%20%22interpolation%22%3B%0D%0A%20%20const%20REMOVE_FENCING%20%3D%20%22remove%20fencing%22%3B%0D%0A%20%20const%20REMOVE_MISC_LIMITS%20%3D%20%22remove%20misc%20limits%22%3B%0D%0A%20%20const%20HIGH_QUALITY_PEN%20%3D%20%22high%20quality%20pen%22%3B%0D%0A%0D%0A%20%20class%20RuntimeOptions%20%7B%0D%0A%20%20%20%20getInfo()%20%7B%0D%0A%20%20%20%20%20%20return%20%7B%0D%0A%20%20%20%20%20%20%20%20id%3A%20%22runtimeoptions%22%2C%0D%0A%20%20%20%20%20%20%20%20name%3A%20%22Runtime%20Options%22%2C%0D%0A%20%20%20%20%20%20%20%20color1%3A%20%22%238c9abf%22%2C%0D%0A%20%20%20%20%20%20%20%20color2%3A%20%22%237d8aab%22%2C%0D%0A%20%20%20%20%20%20%20%20color3%3A%20%22%236f7b99%22%2C%0D%0A%20%20%20%20%20%20%20%20blocks%3A%20%5B%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22getEnabled%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22%5Bthing%5D%20enabled%3F%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.BOOLEAN%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20thing%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20TURBO_MODE%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20%22thing%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22setEnabled%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22set%20%5Bthing%5D%20to%20%5Benabled%5D%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20thing%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20TURBO_MODE%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20%22thing%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20enabled%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20%22true%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20%22enabled%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%22---%22%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22getFramerate%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22framerate%20limit%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22setFramerate%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22set%20framerate%20limit%20to%20%5Bfps%5D%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20fps%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20%2230%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%22---%22%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22getCloneLimit%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22clone%20limit%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22setCloneLimit%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22set%20clone%20limit%20to%20%5Blimit%5D%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20limit%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20%22300%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20%22clones%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%22---%22%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22getDimension%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22stage%20%5Bdimension%5D%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20dimension%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20%22width%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20%22dimension%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22setDimensions%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22set%20stage%20size%20width%3A%20%5Bwidth%5D%20height%3A%20%5Bheight%5D%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20width%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20%22480%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20height%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20%22360%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%22---%22%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22setUsername%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22set%20username%20to%20%5Busername%5D%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20username%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20%22%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22greenFlag%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22run%20green%20flag%20%5Bflag%5D%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20flag%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.IMAGE%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20dataURI%3A%20greenFlagURI%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%5D%2C%0D%0A%20%20%20%20%20%20%20%20menus%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20thing%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20acceptReporters%3A%20true%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20items%3A%20%5B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22turbo%20mode%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20TURBO_MODE%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22interpolation%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20INTERPOLATION%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22remove%20fencing%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20REMOVE_FENCING%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22remove%20misc%20limits%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20REMOVE_MISC_LIMITS%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22high%20quality%20pen%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20HIGH_QUALITY_PEN%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20enabled%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20acceptReporters%3A%20true%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20items%3A%20%5B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22enabled%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20%22true%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22disabled%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20%22false%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20clones%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20acceptReporters%3A%20true%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20items%3A%20%5B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22default%20(300)%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20%22300%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22Infinity%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20%22Infinity%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20dimension%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20acceptReporters%3A%20true%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20items%3A%20%5B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22width%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20%22width%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22height%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20%22height%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%7D%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20getEnabled(%7B%20thing%20%7D)%20%7B%0D%0A%20%20%20%20%20%20if%20(thing%20%3D%3D%3D%20TURBO_MODE)%20%7B%0D%0A%20%20%20%20%20%20%20%20return%20Scratch.vm.runtime.turboMode%3B%0D%0A%20%20%20%20%20%20%7D%20else%20if%20(thing%20%3D%3D%3D%20INTERPOLATION)%20%7B%0D%0A%20%20%20%20%20%20%20%20return%20Scratch.vm.runtime.interpolationEnabled%3B%0D%0A%20%20%20%20%20%20%7D%20else%20if%20(thing%20%3D%3D%3D%20REMOVE_FENCING)%20%7B%0D%0A%20%20%20%20%20%20%20%20return%20!Scratch.vm.runtime.runtimeOptions.fencing%3B%0D%0A%20%20%20%20%20%20%7D%20else%20if%20(thing%20%3D%3D%3D%20REMOVE_MISC_LIMITS)%20%7B%0D%0A%20%20%20%20%20%20%20%20return%20!Scratch.vm.runtime.runtimeOptions.miscLimits%3B%0D%0A%20%20%20%20%20%20%7D%20else%20if%20(thing%20%3D%3D%3D%20HIGH_QUALITY_PEN)%20%7B%0D%0A%20%20%20%20%20%20%20%20return%20Scratch.renderer.useHighQualityRender%3B%0D%0A%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%20%20return%20false%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20setEnabled(%7B%20thing%2C%20enabled%20%7D)%20%7B%0D%0A%20%20%20%20%20%20enabled%20%3D%20Scratch.Cast.toBoolean(enabled)%3B%0D%0A%0D%0A%20%20%20%20%20%20if%20(thing%20%3D%3D%3D%20TURBO_MODE)%20%7B%0D%0A%20%20%20%20%20%20%20%20Scratch.vm.setTurboMode(enabled)%3B%0D%0A%20%20%20%20%20%20%7D%20else%20if%20(thing%20%3D%3D%3D%20INTERPOLATION)%20%7B%0D%0A%20%20%20%20%20%20%20%20Scratch.vm.setInterpolation(enabled)%3B%0D%0A%20%20%20%20%20%20%7D%20else%20if%20(thing%20%3D%3D%3D%20REMOVE_FENCING)%20%7B%0D%0A%20%20%20%20%20%20%20%20Scratch.vm.setRuntimeOptions(%7B%0D%0A%20%20%20%20%20%20%20%20%20%20fencing%3A%20!enabled%2C%0D%0A%20%20%20%20%20%20%20%20%7D)%3B%0D%0A%20%20%20%20%20%20%7D%20else%20if%20(thing%20%3D%3D%3D%20REMOVE_MISC_LIMITS)%20%7B%0D%0A%20%20%20%20%20%20%20%20Scratch.vm.setRuntimeOptions(%7B%0D%0A%20%20%20%20%20%20%20%20%20%20miscLimits%3A%20!enabled%2C%0D%0A%20%20%20%20%20%20%20%20%7D)%3B%0D%0A%20%20%20%20%20%20%7D%20else%20if%20(thing%20%3D%3D%3D%20HIGH_QUALITY_PEN)%20%7B%0D%0A%20%20%20%20%20%20%20%20Scratch.renderer.setUseHighQualityRender(enabled)%3B%0D%0A%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20getFramerate()%20%7B%0D%0A%20%20%20%20%20%20return%20Scratch.vm.runtime.frameLoop.framerate%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20setFramerate(%7B%20fps%20%7D)%20%7B%0D%0A%20%20%20%20%20%20fps%20%3D%20Scratch.Cast.toNumber(fps)%3B%0D%0A%20%20%20%20%20%20Scratch.vm.setFramerate(fps)%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20getCloneLimit()%20%7B%0D%0A%20%20%20%20%20%20return%20Scratch.vm.runtime.runtimeOptions.maxClones%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20setCloneLimit(%7B%20limit%20%7D)%20%7B%0D%0A%20%20%20%20%20%20limit%20%3D%20Scratch.Cast.toNumber(limit)%3B%0D%0A%20%20%20%20%20%20Scratch.vm.setRuntimeOptions(%7B%0D%0A%20%20%20%20%20%20%20%20maxClones%3A%20limit%2C%0D%0A%20%20%20%20%20%20%7D)%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20getDimension(%7B%20dimension%20%7D)%20%7B%0D%0A%20%20%20%20%20%20if%20(dimension%20%3D%3D%3D%20%22width%22)%20%7B%0D%0A%20%20%20%20%20%20%20%20return%20Scratch.vm.runtime.stageWidth%3B%0D%0A%20%20%20%20%20%20%7D%20else%20if%20(dimension%20%3D%3D%3D%20%22height%22)%20%7B%0D%0A%20%20%20%20%20%20%20%20return%20Scratch.vm.runtime.stageHeight%3B%0D%0A%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%20%20return%200%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20setDimensions(%7B%20width%2C%20height%20%7D)%20%7B%0D%0A%20%20%20%20%20%20width%20%3D%20Scratch.Cast.toNumber(width)%3B%0D%0A%20%20%20%20%20%20height%20%3D%20Scratch.Cast.toNumber(height)%3B%0D%0A%20%20%20%20%20%20Scratch.vm.setStageSize(width%2C%20height)%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20setUsername(%7B%20username%20%7D)%20%7B%0D%0A%20%20%20%20%20%20Scratch.vm.runtime.ioDevices.userData._username%20%3D%0D%0A%20%20%20%20%20%20%20%20Scratch.Cast.toString(username)%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20greenFlag()%20%7B%0D%0A%20%20%20%20%20%20Scratch.vm.runtime.greenFlag()%3B%0D%0A%20%20%20%20%7D%0D%0A%20%20%7D%0D%0A%0D%0A%20%20Scratch.extensions.register(new%20RuntimeOptions())%3B%0D%0A%7D)(Scratch)%3B%0D%0A%20%7D)(Scratch)%3B"]) {
+        vm.extensionManager.loadExtensionURL(extension);
+      }
+
+    } catch (e) {
+      handleError(e);
+    }
+  </script>
+  
+  
+    <script>
+      const getProjectData = (function() {
+        const storage = scaffolding.storage;
+        storage.onprogress = (total, loaded) => {
+          setProgress(interpolate(0.2, 0.98, loaded / total));
+        };
+        
+        storage.addWebStore(
+          [
+            storage.AssetType.ImageVector,
+            storage.AssetType.ImageBitmap,
+            storage.AssetType.Sound,
+            storage.AssetType.Font
+          ].filter(i => i),
+          (asset) => new URL('./assets/' + asset.assetId + '.' + asset.dataFormat, location).href
+        );
+        return () => new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => {
+          resolve(xhr.response);
+        };
+        xhr.onerror = () => {
+          if (location.protocol === 'file:') {
+            reject(new Error('Zip environment must be used from a website, not from a file URL.'));
+          } else {
+            reject(new Error('Request to load project data failed.'));
+          }
+        };
+        xhr.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setProgress(interpolate(0.1, 0.2, e.loaded / e.total));
+          }
+        };
+        xhr.responseType = 'arraybuffer';
+        xhr.open('GET', "./assets/project.json");
+        xhr.send();
+      });
+      })();
+    </script>
+  <script>
+    const run = async () => {
+      const projectData = await getProjectData();
+      await scaffolding.loadProject(projectData);
+      setProgress(1);
+      loadingScreen.hidden = true;
+      if (true) {
+        scaffolding.start();
+      } else {
+        launchScreen.hidden = false;
+        launchScreen.addEventListener('click', () => {
+          launchScreen.hidden = true;
+          scaffolding.start();
+        });
+        launchScreen.focus();
+      }
+    };
+    run().catch(handleError);
+  </script>
+</body>
+</html>
